@@ -11,5 +11,15 @@ namespace AllMiniLmL6V2Sharp.Tests
             Assert.NotNull(embedding);
             Assert.NotEmpty(embedding);
         }
+
+        [Fact]
+        public void ModelMultipleTest()
+        {
+            var model = new AllMiniLmL6V2();
+            string[] sentences = ["This is an example sentence", "Here is another"];
+            var embedding = model.Run(sentences);
+            Assert.NotNull(embedding);
+            Assert.NotEmpty(embedding);
+        }
     }
 }
