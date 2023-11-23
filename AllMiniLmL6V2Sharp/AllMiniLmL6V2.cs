@@ -1,9 +1,9 @@
 ﻿using AllMiniLmL6V2Sharp.Tokenizer;
 using Microsoft.ML.OnnxRuntime;
+using Microsoft.ML.OnnxRuntime.Tensors;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using TorchSharp;
 
 namespace AllMiniLmL6V2Sharp
 {
@@ -65,14 +65,10 @@ namespace AllMiniLmL6V2Sharp
             var pooled = MeanPooling(output, attMaskOrtValue);
 
             // Normalize Embeddings
-            // Calculate L2 norm along the specified dimension
-            var norms = torch.norm(pooled, 1, true, 2);
+            var normalized = pooled.Normalize(p: 2, dim: 1);
 
-            // Normalize embeddings
-            var normalized_embeddings = pooled.div(norms);
-
-            var result = normalized_embeddings.data<float>().ToArray();
-            return new float[384];
+            var result = normalized.ToArray();
+            return result;
         }
 
         public void Run(IEnumerable<string> sentances)
@@ -80,33 +76,42 @@ namespace AllMiniLmL6V2Sharp
             throw new NotImplementedException();
         }
 
-        private torch.Tensor MeanPooling(IDisposableReadOnlyCollection<OrtValue>  modelOutput, OrtValue attentionMask)
+        private DenseTensor<float> MeanPooling(IDisposableReadOnlyCollection<OrtValue>  modelOutput, OrtValue attentionMask)
         {
             OrtValue tokenValue = modelOutput.First();
-            var tokenTypeAndShape = tokenValue.GetTensorTypeAndShape();
-            var tokenShape = new ReadOnlySpan<int>(tokenTypeAndShape.Shape.Select(s => (int)s).ToArray());
-            var token_embeddings = tokenValue.GetTensorDataAsSpan<float>(); //First element of model_output contains all token embeddings
-            var tokenTensor = torch.tensor(token_embeddings.ToArray(), torch.ScalarType.Float32).reshape(tokenTypeAndShape.Shape);
+            DenseTensor<float> tokenTensor = OrtToTensor<float>(tokenValue);
+            DenseTensor<long> maskIntTensor = OrtToTensor<long>(attentionMask);
+            var maskFloatData = maskIntTensor.Select(x => (float)x).ToArray();
+            DenseTensor<float> maskTensor = new DenseTensor<float>(maskFloatData, maskIntTensor.Dimensions);
+            DenseTensor<float> maskedSum = ApplyMaskAndSum(tokenTensor, maskTensor);
+            return maskedSum;
+        }
 
-            var maskTypeAndShape = attentionMask.GetTensorTypeAndShape();
-            var maskShape = new ReadOnlySpan<int>(maskTypeAndShape.Shape.Select(s => (int)s).ToArray());
-            var mask = attentionMask.GetTensorDataAsSpan<long>();
-            var maskData = new ReadOnlySpan<float>(mask.ToArray().Select(m => (float)m).ToArray());
-            var maskTensor = torch.tensor(maskData.ToArray(), torch.ScalarType.Float32);
+        private DenseTensor<float> ApplyMaskAndSum(DenseTensor<float> tokenTensor, DenseTensor<float> maskTensor)
+        {
+            var expanded = maskTensor.Unsqueeze(-1).Expand(tokenTensor.Dimensions.ToArray());
 
-            var expanded = maskTensor.unsqueeze(-1).expand(tokenTypeAndShape.Shape);
+            var multiplied = tokenTensor.ElementWiseMultiply(expanded);
 
-            var multiplied = tokenTensor.mul(expanded);
+            var sum = multiplied.Sum(1);
 
-            var sum = multiplied.sum(1);
+            var sumMask = expanded.Sum(1);
 
-            var sumMask = expanded.sum(1);
+            var clampedMask = sumMask.Clamp(min: 1e-9f);
 
-            var clampedMask = sumMask.clamp(min: 1e-9f);
-
-            var result = sum.div(clampedMask);
+            var result = sum.ElementWiseDivide(clampedMask);
 
             return result;
+        }
+
+        private static DenseTensor<T> OrtToTensor<T>(OrtValue value) where T : unmanaged
+        {
+            var typeAndShape = value.GetTensorTypeAndShape();
+            var tokenShape = new ReadOnlySpan<int>(typeAndShape.Shape.Select(s => (int)s).ToArray());
+            var tokenEmbeddings = value.GetTensorDataAsSpan<T>();
+            DenseTensor<T> tokenTensor = new DenseTensor<T>(tokenShape);
+            tokenEmbeddings.CopyTo(tokenTensor.Buffer.Span);
+            return tokenTensor;
         }
     }
 }
