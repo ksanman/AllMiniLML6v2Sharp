@@ -6,11 +6,11 @@ namespace AllMiniLmL6V2Sharp.Tokenizer
 {
     public class WordpieceTokenizer : BaseTokenizer
     {
-        private readonly IOrderedDictionary _vocab;
+        private readonly IDictionary<string, int> _vocab;
         private readonly string _unknownToken;
         private readonly int _maxInputCharsPerWord;
         
-        public WordpieceTokenizer(IOrderedDictionary vocab, string unknownToken = "[UNK]", int maxInputCharsPerWord=200)
+        public WordpieceTokenizer(IDictionary<string, int> vocab, string unknownToken = Tokens.UNKNOWN_TOKEN, int maxInputCharsPerWord=200)
         {
             _vocab = vocab;
             _unknownToken = unknownToken;
@@ -42,7 +42,7 @@ namespace AllMiniLmL6V2Sharp.Tokenizer
                         {
                             substring = "##" + substring;
                         }
-                        if (_vocab.Contains(substring))
+                        if (_vocab.ContainsKey(substring))
                         {
                             currentSubstring = substring;
                             break;

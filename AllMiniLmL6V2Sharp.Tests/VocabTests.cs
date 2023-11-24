@@ -4,7 +4,7 @@ namespace AllMiniLmL6V2Sharp.Tests
 {
     public class VocabTests
     {
-        private const string vocabPath = "./all-MiniLm-L6-v2/vocab.txt";
+        private const string vocabPath = "./model/vocab.txt";
 
         [Fact]
         public void LoadVocabTest()

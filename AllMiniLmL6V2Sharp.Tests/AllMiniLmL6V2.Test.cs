@@ -7,7 +7,7 @@ namespace AllMiniLmL6V2Sharp.Tests
         {
             var model = new AllMiniLmL6V2();
             var sentence = "This is an example sentence";
-            var embedding = model.Run(sentence);
+            var embedding = model.GenerateEmbedding(sentence);
             Assert.NotNull(embedding);
             Assert.NotEmpty(embedding);
         }
@@ -17,7 +17,7 @@ namespace AllMiniLmL6V2Sharp.Tests
         {
             var model = new AllMiniLmL6V2();
             string[] sentences = ["This is an example sentence", "Here is another"];
-            var embedding = model.Run(sentences);
+            var embedding = model.GenerateEmbeddings(sentences);
             Assert.NotNull(embedding);
             Assert.NotEmpty(embedding);
         }

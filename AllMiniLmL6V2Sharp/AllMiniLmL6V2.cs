@@ -7,24 +7,18 @@ using System.Linq;
 
 namespace AllMiniLmL6V2Sharp
 {
-    public struct BertInput
-    {
-        public long[] InputIds { get; set; }
-        public long[] AttentionMask { get; set; }
-        public long[] TypeIds { get; set; }
-    }
 
     public class AllMiniLmL6V2
     {
         private readonly FullTokenizer _tokenizer;
         private readonly string _modelPath;
-        public AllMiniLmL6V2(string modelPath = "./all-MiniLm-L6-v2/model.onnx", string vocabPath = "./all-MiniLm-L6-v2/vocab.txt")
+        public AllMiniLmL6V2(string modelPath = "./model/model.onnx", FullTokenizer? tokenizer = null)
         {
-            _tokenizer = new FullTokenizer(vocabPath);
+            _tokenizer = tokenizer ?? new FullTokenizer("./model/vocab.txt");
             _modelPath = modelPath;
         }
 
-        public float[] Run(string sentence)
+        public float[] GenerateEmbedding(string sentence)
         {
             // Tokenize Input
             IEnumerable<Token> tokens = _tokenizer.Tokenize(sentence);
@@ -71,7 +65,7 @@ namespace AllMiniLmL6V2Sharp
             return result;
         }
 
-        public float[][] Run(IEnumerable<string> sentences)
+        public float[][] GenerateEmbeddings(IEnumerable<string> sentences)
         {
             // Tokenize Input
             IEnumerable<IEnumerable<Token>> allTokens = new List<IEnumerable<Token>>();

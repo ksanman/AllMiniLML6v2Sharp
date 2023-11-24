@@ -1,22 +1,20 @@
 ﻿using System.Collections.Generic;
-using System.Collections.Specialized;
 using System.IO;
 
 namespace AllMiniLmL6V2Sharp.Tokenizer
 {
     public class VocabLoader
     {
-        public static IOrderedDictionary Load(string path)
+        public static IDictionary<string, int> Load(string path)
         {
-            IOrderedDictionary vocab = new OrderedDictionary();
+            IDictionary<string, int> vocab = new Dictionary<string, int>();
             int index = 0;
             IEnumerable<string> lines = File.ReadLines(path);
             foreach (string line in lines)
             {
                 if(string.IsNullOrEmpty(line)) break;
                 string trimmedLine = line.Trim();
-                vocab.Add(trimmedLine, index);
-                index++;    
+                vocab.Add(trimmedLine, index++);
             }
 
             return vocab;
