@@ -2,7 +2,7 @@
 
 namespace AllMiniLmL6V2Sharp.Tokenizer
 {
-    public abstract class BaseTokenizer
+    internal abstract class BaseTokenizer
     {
         public abstract IEnumerable<string> Tokenize(string text);
         protected IEnumerable<string> WhitespaceTokenize(string text)

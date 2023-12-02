@@ -3,13 +3,13 @@ using System.Linq;
 
 namespace AllMiniLmL6V2Sharp.Tokenizer
 {
-    public class FullTokenizer
+    public class BertTokenizer : ITokenizer
     {
         private readonly IDictionary<string, int> _vocab;
         private readonly BasicTokenizer _basicTokenizer;
         private readonly WordpieceTokenizer _wordpieceTokenizer;
         private readonly IDictionary<int, string> _invVocab;
-        public FullTokenizer(string vocabFile, bool isLowerCase = true, string unknownToken = Tokens.UNKNOWN_TOKEN, int maxInputCharsPerWord = 200) 
+        public BertTokenizer(string vocabFile, bool isLowerCase = true, string unknownToken = Tokens.UNKNOWN_TOKEN, int maxInputCharsPerWord = 200) 
         {
             _vocab = VocabLoader.Load(vocabFile);
             _invVocab = new Dictionary<int, string>();
@@ -53,41 +53,9 @@ namespace AllMiniLmL6V2Sharp.Tokenizer
             IEnumerable<Token> tokens = Tokenize(text);
 
             IEnumerable<long> padding = Enumerable.Repeat(0L, sequenceLength - tokens.Count());
-            IEnumerable<long> tokenIndexes = tokens.Select(token => token.VocabularyIndex).Concat(padding);
-            IEnumerable<long> segmentIndexes = tokens.Select(token => token.SegmentIndex).Concat(padding);
-            IEnumerable<long> inputMask = tokens.Select(o => 1L).Concat(padding);
-
-            IEnumerable<EncodedToken> output = tokenIndexes.Zip(segmentIndexes, (t, s) => new { InputId = t, TokenType = s})
-                .Zip(inputMask, (t, z) => new {InputId = t.InputId, TokenType = t.TokenType, AttentionMask = z})
-                .Select(x => new EncodedToken{ InputIds = x.InputId, TokenTypeIds = x.TokenType, AttentionMask = x.AttentionMask });
-
-            return output;
-        }
-
-        public IEnumerable<int> ConvertTokensToIds(IEnumerable<string> items)
-        {
-            List<int> output = new List<int>();
-            foreach(string item in items)
-            {
-                output.Add((int)_vocab[item]);
-            }
-            return output;
-        }
-
-        public IEnumerable<string> ConvertIdsToTokens(IEnumerable<int> items)
-        {
-            List<string> output = new List<string>();
-            foreach(int id in items)
-            {
-                output.Add(ConvertIdToToken(id));
-            }
-
-            return output;
-        }
-
-        public string ConvertIdToToken(int id)
-        {
-            return _invVocab[id];
+            return tokens
+                .Select(token => new EncodedToken { InputIds = token.VocabularyIndex, TokenTypeIds = token.SegmentIndex, AttentionMask = 1L })
+                .Concat(padding.Select(p => new EncodedToken { InputIds = p, TokenTypeIds = p, AttentionMask = p }));
         }
     }
 }

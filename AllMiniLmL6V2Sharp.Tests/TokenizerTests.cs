@@ -11,9 +11,9 @@ namespace AllMiniLmL6V2Sharp.Tests
         [InlineData("This is an example sentence.")]
         [InlineData("This is an example sentance")]
         [InlineData("sentance")]
-        public void FullTokenizerTest(string sentence)
+        public void BertTokenizerTest(string sentence)
         {
-            FullTokenizer tokenizer = new FullTokenizer(vocabPath);
+            BertTokenizer tokenizer = new(vocabPath);
             IEnumerable<Token> tokenized = tokenizer.Tokenize(sentence);
             Assert.NotNull(tokenized);
             Assert.NotEmpty(tokenized);

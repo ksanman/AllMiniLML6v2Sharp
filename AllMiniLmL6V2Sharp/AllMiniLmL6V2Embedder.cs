@@ -7,18 +7,25 @@ using System.Linq;
 
 namespace AllMiniLmL6V2Sharp
 {
-
-    public class AllMiniLmL6V2
+    /// <summary>
+    /// Generate Embeddings via All-MiniLM-L6-v2
+    /// </summary>
+    public class AllMiniLmL6V2Embedder : IEmbedder
     {
-        private readonly FullTokenizer _tokenizer;
+        private readonly ITokenizer _tokenizer;
         private readonly string _modelPath;
-        public AllMiniLmL6V2(string modelPath = "./model/model.onnx", FullTokenizer? tokenizer = null)
+        public AllMiniLmL6V2Embedder(string modelPath = "./model/model.onnx", ITokenizer? tokenizer = null)
         {
-            _tokenizer = tokenizer ?? new FullTokenizer("./model/vocab.txt");
+            _tokenizer = tokenizer ?? new BertTokenizer("./model/vocab.txt");
             _modelPath = modelPath;
         }
 
-        public float[] GenerateEmbedding(string sentence)
+        /// <summary>
+        /// Generates an embedding array for the given sentance.
+        /// </summary>
+        /// <param name="sentence">Text to embed.</param>
+        /// <returns>Sentance embeddings</returns>
+        public IEnumerable<float> GenerateEmbedding(string sentence)
         {
             // Tokenize Input
             IEnumerable<Token> tokens = _tokenizer.Tokenize(sentence);
@@ -65,7 +72,12 @@ namespace AllMiniLmL6V2Sharp
             return result;
         }
 
-        public float[][] GenerateEmbeddings(IEnumerable<string> sentences)
+        /// <summary>
+        /// Generates an embedding array for the given sentances.
+        /// </summary>
+        /// <param name="sentence">Text to embed.</param>
+        /// <returns>An enumerable of embeddings.</returns>
+        public IEnumerable<IEnumerable<float>> GenerateEmbeddings(IEnumerable<string> sentences)
         {
             // Tokenize Input
             IEnumerable<IEnumerable<Token>> allTokens = new List<IEnumerable<Token>>();

@@ -5,7 +5,7 @@ using System.Text;
 
 namespace AllMiniLmL6V2Sharp.Tokenizer
 {
-    public class BasicTokenizer : BaseTokenizer
+    internal class BasicTokenizer : BaseTokenizer
     {
         private readonly bool IsLowerCase = true;
         public BasicTokenizer(bool isLowerCase)

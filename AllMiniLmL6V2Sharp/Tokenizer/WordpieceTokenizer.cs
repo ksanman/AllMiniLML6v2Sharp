@@ -1,10 +1,9 @@
 ﻿using System.Collections.Generic;
-using System.Collections.Specialized;
 using System.Linq;
 
 namespace AllMiniLmL6V2Sharp.Tokenizer
 {
-    public class WordpieceTokenizer : BaseTokenizer
+    internal class WordpieceTokenizer : BaseTokenizer
     {
         private readonly IDictionary<string, int> _vocab;
         private readonly string _unknownToken;
