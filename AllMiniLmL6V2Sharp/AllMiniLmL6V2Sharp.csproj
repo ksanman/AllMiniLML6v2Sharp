@@ -3,7 +3,29 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.1</TargetFramework>
     <Nullable>enable</Nullable>
+    <Title>AllMiniLML6v2Sharp</Title>
+    <Version>0.0.1</Version>
+    <Authors>Kody Sanchez</Authors>
+    <Description>NET Standard 2.1 library to produces embeddings using C# Bert Tokenizer and Onnx All-Mini-LM-L6-v2 model.</Description>
+    <Copyright>2023 Kody Sanchez</Copyright>
+    <PackageProjectUrl>https://github.com/ksanman/AllMiniLML6v2Sharp</PackageProjectUrl>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <RepositoryUrl>https://github.com/ksanman/AllMiniLML6v2Sharp</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageTags>embeddings; all-mini-lm-l6-v2; tokenizer; BERT; Sentence Transfomers; onnx;</PackageTags>
+    <PackageLicenseFile>LICENSE</PackageLicenseFile>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\LICENSE">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+    <None Include="..\README.md">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="libtorch-cpu-win-x64" Version="2.1.0.1" />
