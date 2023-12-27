@@ -5,6 +5,9 @@ Use as a .net standard 2.1 library.
 
 Includes tokenizer and onnx model.
 
+## Nuget
+[AllMiniLML6v2Sharp](https://www.nuget.org/packages/AllMiniLmL6V2Sharp/)
+
 ### How to use
 - Single Sentance
 ```C#
