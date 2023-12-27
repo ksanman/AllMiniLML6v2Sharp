@@ -5,7 +5,7 @@
     <Nullable>enable</Nullable>
     <Title>AllMiniLML6v2Sharp</Title>
     <Version>0.0.1</Version>
-    <Authors>Kody Sanchez</Authors>
+    <Authors>ksanman</Authors>
     <Description>NET Standard 2.1 library to produces embeddings using C# Bert Tokenizer and Onnx All-Mini-LM-L6-v2 model.</Description>
     <Copyright>2023 Kody Sanchez</Copyright>
     <PackageProjectUrl>https://github.com/ksanman/AllMiniLML6v2Sharp</PackageProjectUrl>
