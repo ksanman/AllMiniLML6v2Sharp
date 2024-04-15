@@ -14,10 +14,18 @@ namespace AllMiniLmL6V2Sharp
     {
         private readonly ITokenizer _tokenizer;
         private readonly string _modelPath;
-        public AllMiniLmL6V2Embedder(string modelPath = "./model/model.onnx", ITokenizer? tokenizer = null)
+        private readonly bool _truncate;
+        /// <summary>
+        /// Initializes the AllMiniLmL6v2 Embedder
+        /// </summary>
+        /// <param name="modelPath">Path to the embedding onnx model.</param>
+        /// <param name="tokenizer">Optional custom tokenizer function.</param>
+        /// <param name="truncate">If true, automatically truncates tokens to 512 tokens.</param>
+        public AllMiniLmL6V2Embedder(string modelPath = "./model/model.onnx", ITokenizer? tokenizer = null, bool truncate = false)
         {
             _tokenizer = tokenizer ?? new BertTokenizer("./model/vocab.txt");
             _modelPath = modelPath;
+            _truncate = truncate;
         }
 
         /// <summary>
@@ -29,6 +37,11 @@ namespace AllMiniLmL6V2Sharp
         {
             // Tokenize Input
             IEnumerable<Token> tokens = _tokenizer.Tokenize(sentence);
+            if(_truncate && tokens.Count() > 512)
+            {
+                tokens = tokens.Take(512);
+            }
+
             IEnumerable<EncodedToken> encodedTokens = _tokenizer.Encode(tokens.Count(), sentence);
 
             // Compute Token Embeddings
@@ -86,6 +99,11 @@ namespace AllMiniLmL6V2Sharp
             foreach (var sentence in sentences)
             {
                 IEnumerable<Token> tokens = _tokenizer.Tokenize(sentence);
+
+                if(_truncate && tokens.Count() > 512)
+                {
+                    tokens = tokens.Take(512);
+                }
 
                 allTokens = allTokens.Append(tokens);
             }

@@ -52,6 +52,11 @@ namespace AllMiniLmL6V2Sharp.Tokenizer
         {
             IEnumerable<Token> tokens = Tokenize(text);
 
+            if(tokens.Count() > sequenceLength)
+            {
+                tokens = tokens.Take(sequenceLength);
+            }
+
             IEnumerable<long> padding = Enumerable.Repeat(0L, sequenceLength - tokens.Count());
             return tokens
                 .Select(token => new EncodedToken { InputIds = token.VocabularyIndex, TokenTypeIds = token.SegmentIndex, AttentionMask = 1L })
