@@ -41,3 +41,7 @@ ITokenizer tokenizer = new CustomTokenizer();
 var embedder = new AllMiniLmL6V2Embedder(tokenizer: tokenizer);
 var embedding = embedder.GenerateEmbedding(sentence);
 ```
+
+### Tested Models
+- [all-MiniLM-L6-v2](https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2)
+- [all-MiniLM-L12-v2](https://huggingface.co/sentence-transformers/all-MiniLM-L12-v2)

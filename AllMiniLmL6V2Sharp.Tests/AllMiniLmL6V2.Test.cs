@@ -41,5 +41,30 @@ namespace AllMiniLmL6V2Sharp.Tests
             Assert.NotNull(embedding);
             Assert.NotEmpty(embedding);
         }
+
+        [Fact]
+        public void MultipleSameTest()
+        {
+            var model = new AllMiniLmL6V2Embedder();
+            string sentence = "This is an example sentence";
+            string[] sentences = [sentence, sentence, sentence];
+            var embedding = model.GenerateEmbedding(sentence);
+            var embeddings = model.GenerateEmbeddings(sentences);
+            Assert.NotNull(embedding);
+            Assert.NotEmpty(embedding);
+            Assert.NotNull(embeddings);
+            Assert.NotEmpty(embeddings);
+            Assert.Equal(sentences.Length, embeddings.Count());
+
+            // Make sure all embeddings are the same.
+            Assert.True(embeddings.All(e => e.SequenceEqual(embeddings.First())));
+            Assert.True(embeddings.All(e => e.SequenceEqual(embedding)));
+
+            foreach (var batchEmbedding in embeddings)
+            {
+                Assert.True(batchEmbedding.SequenceEqual(embedding),
+                    "Single embedding does not match a batch embedding");
+            }
+        }
     }
 }
