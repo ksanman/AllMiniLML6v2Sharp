@@ -8,6 +8,10 @@ Includes tokenizer and onnx model.
 ## Nuget
 [AllMiniLML6v2Sharp](https://www.nuget.org/packages/AllMiniLmL6V2Sharp/)
 
+The Nuget does not include the onnx model or the vocab.txt. These can be found on Hugging Face (See tested models below).
+The Embedder looks for the default model.onnx and vocab.txt files in the ```.\models``` folder.
+You may use a custom onnx model or custom vocab as well.
+
 ### How to use
 - Single Sentence
 ```C#
