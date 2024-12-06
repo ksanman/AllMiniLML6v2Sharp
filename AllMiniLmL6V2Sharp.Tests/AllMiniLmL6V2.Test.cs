@@ -41,5 +41,59 @@ namespace AllMiniLmL6V2Sharp.Tests
             Assert.NotNull(embedding);
             Assert.NotEmpty(embedding);
         }
+
+        [Fact]
+        public void MultipleSameTest()
+        {
+            var model = new AllMiniLmL6V2Embedder();
+            string sentence = "Hello World!";
+            string[] sentences = [sentence, sentence, sentence, sentence];
+            var embedding = model.GenerateEmbedding(sentence);
+            var embeddings = model.GenerateEmbeddings(sentences);
+            Assert.NotNull(embedding);
+            Assert.NotEmpty(embedding);
+            Assert.NotNull(embeddings);
+            Assert.NotEmpty(embeddings);
+            Assert.Equal(sentences.Length, embeddings.Count());
+
+            // Make sure all embeddings are the same.
+            Assert.True(embeddings.All(e => e.SequenceEqual(embeddings.First())));
+            Assert.True(embeddings.All(e => e.Zip(embedding).All(v => v.First == v.Second))); 
+            
+            foreach (var batchEmbedding in embeddings)
+            {
+                Assert.True(batchEmbedding.SequenceEqual(embedding),
+                    "Single embedding does not match a batch embedding");
+            }
+        }
+
+        [Fact]
+        public void MultipleSamev2Test()
+        {
+            var model = new AllMiniLmL6V2Embedder();
+            string sentence = "This is an example sentence";
+            string[] sentences = ["not it", sentence, "another", sentence];
+            var embedding = model.GenerateEmbedding(sentence);
+            var embeddings = model.GenerateEmbeddings(sentences);
+            Assert.NotNull(embedding);
+            Assert.NotEmpty(embedding);
+            Assert.NotNull(embeddings);
+            Assert.NotEmpty(embeddings);
+            Assert.Equal(sentences.Length, embeddings.Count());
+
+
+            for (int i = 0; i < sentences.Length; i++)
+            {
+                var batch = embeddings.ElementAt(i);
+                if(i == 0 || i == 2)
+                {
+                    Assert.False(batch.SequenceEqual(embedding));
+                }
+                else
+                {
+                    Assert.True(batch.SequenceEqual(embedding));
+                }
+            }
+        }
     }
 }

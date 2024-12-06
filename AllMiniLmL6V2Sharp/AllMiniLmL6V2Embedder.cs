@@ -160,15 +160,28 @@ namespace AllMiniLmL6V2Sharp
             List<float[]> results = new List<float[]>();
             float[] output = modelOutput.GetTensorDataAsSpan<float>().ToArray();
             int[] dimensions = modelOutput.GetTensorTypeAndShape().Shape.Select(s => (int)s).ToArray();
-            dimensions[0] = 1;
+            dimensions[0] = 1; // Since only processing 1 row at a time, set to 1. 
             long shape = dimensions[0] * dimensions[1] * dimensions[2];
 
-            for (long i = 0; i < output.Length; i += shape)
+            long[] mask = attentionMask.GetTensorDataAsSpan<long>().ToArray();
+            int[] maskDimensions = attentionMask.GetTensorTypeAndShape().Shape.Select(s => (int)s).ToArray();
+            maskDimensions[0] = 1; // Since only processing 1 row at a time, set to 1. 
+            long maskShape = maskDimensions[0] * maskDimensions[1];
+            int indicies = (int)Math.Floor((double)output.Length / (double)shape);
+
+            for (long i = 0; i < indicies; i++)
             {
+                long sourceIndex = shape * i;
                 float[] buffer = new float[shape];
-                Array.Copy(output, i, buffer, 0, shape);
+                Array.Copy(output, sourceIndex, buffer, 0, shape);
                 DenseTensor<float> tokenTensor = new DenseTensor<float>(buffer, dimensions);
-                DenseTensor<float> maskTensor = AttentionMaskToTensor(attentionMask);
+
+                long[] maskBuffer = new long[maskShape];
+                long maskIndex = maskShape * i;
+                Array.Copy(mask, maskIndex, maskBuffer, 0, maskShape);
+
+                DenseTensor<float> maskTensor = new DenseTensor<float>(maskBuffer.Select(x => (float)x).ToArray(), maskDimensions);
+
                 var pooled = MeanPooling(tokenTensor, maskTensor);
                 // Normalize Embeddings
                 var normalized = pooled.Normalize(p: 2, dim: 1);
