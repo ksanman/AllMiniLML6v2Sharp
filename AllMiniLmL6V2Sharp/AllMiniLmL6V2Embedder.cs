@@ -10,11 +10,15 @@ namespace AllMiniLmL6V2Sharp
     /// <summary>
     /// Generate Embeddings via All-MiniLM-L6-v2
     /// </summary>
-    public class AllMiniLmL6V2Embedder : IEmbedder
+    public class AllMiniLmL6V2Embedder : IEmbedder, IDisposable
     {
         private readonly ITokenizer _tokenizer;
         private readonly string _modelPath;
         private readonly bool _truncate;
+        private readonly InferenceSession _inferenceSession;
+        private readonly RunOptions _runOptions;
+        private bool disposedValue;
+
         /// <summary>
         /// Initializes the AllMiniLmL6v2 Embedder
         /// </summary>
@@ -26,6 +30,8 @@ namespace AllMiniLmL6V2Sharp
             _tokenizer = tokenizer ?? new BertTokenizer("./model/vocab.txt");
             _modelPath = modelPath;
             _truncate = truncate;
+            _runOptions = new RunOptions();
+            _inferenceSession = new InferenceSession(_modelPath);
         }
 
         /// <summary>
@@ -52,9 +58,6 @@ namespace AllMiniLmL6V2Sharp
                 AttentionMask = encodedTokens.Select(t => t.AttentionMask).ToArray()
             };
 
-            using RunOptions runOptions = new RunOptions();
-            using InferenceSession session = new InferenceSession(_modelPath);
-
             // Create input tensors over the input data.
             using OrtValue inputIdsOrtValue = OrtValue.CreateTensorValueFromMemory(bertInput.InputIds,
                   new long[] { 1, bertInput.InputIds.Length });
@@ -73,7 +76,7 @@ namespace AllMiniLmL6V2Sharp
                 { "token_type_ids", typeIdsOrtValue }
             };
 
-            using IDisposableReadOnlyCollection<OrtValue> output = session.Run(runOptions, inputs, session.OutputNames);
+            using IDisposableReadOnlyCollection<OrtValue> output = _inferenceSession.Run(_runOptions, inputs, _inferenceSession.OutputNames);
 
             // Perform Pooling
             var pooled = SingleMeanPooling(output.First(), attMaskOrtValue);
@@ -124,9 +127,6 @@ namespace AllMiniLmL6V2Sharp
                 AttentionMask = e.Select(t => t.AttentionMask).ToArray()
             });
 
-            using RunOptions runOptions = new RunOptions();
-            using InferenceSession session = new InferenceSession(_modelPath);
-
             // Create input tensors over the input data.
             var size = inputs.Count();
             var inputIds = inputs.SelectMany(i => i.InputIds).ToArray();
@@ -149,7 +149,7 @@ namespace AllMiniLmL6V2Sharp
                 { "token_type_ids", typeIdsOrtValue }
             };
 
-            using IDisposableReadOnlyCollection<OrtValue> output = session.Run(runOptions, ortInputs, session.OutputNames);
+            using IDisposableReadOnlyCollection<OrtValue> output = _inferenceSession.Run(_runOptions, ortInputs, _inferenceSession.OutputNames);
 
             // For now, perform this seperatly for each output value.
             return MultiplePostProcess(output.First(), attMaskOrtValue);
@@ -237,6 +237,27 @@ namespace AllMiniLmL6V2Sharp
             DenseTensor<T> tokenTensor = new DenseTensor<T>(tokenShape);
             tokenEmbeddings.CopyTo(tokenTensor.Buffer.Span);
             return tokenTensor;
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!disposedValue)
+            {
+                if (disposing)
+                {
+                    _inferenceSession.Dispose();
+                    _runOptions.Dispose();
+                }
+
+                disposedValue = true;
+            }
+        }
+
+        public void Dispose()
+        {
+            // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
+            Dispose(disposing: true);
+            GC.SuppressFinalize(this);
         }
     }
 }
