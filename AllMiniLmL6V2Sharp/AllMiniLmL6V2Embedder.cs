@@ -10,11 +10,15 @@ namespace AllMiniLmL6V2Sharp
     /// <summary>
     /// Generate Embeddings via All-MiniLM-L6-v2
     /// </summary>
-    public class AllMiniLmL6V2Embedder : IEmbedder
+    public class AllMiniLmL6V2Embedder : IEmbedder, IDisposable
     {
         private readonly ITokenizer _tokenizer;
         private readonly string _modelPath;
         private readonly bool _truncate;
+        private readonly InferenceSession _inferenceSession;
+        private readonly RunOptions _runOptions;
+        private bool disposedValue;
+
         /// <summary>
         /// Initializes the AllMiniLmL6v2 Embedder
         /// </summary>
@@ -26,6 +30,8 @@ namespace AllMiniLmL6V2Sharp
             _tokenizer = tokenizer ?? new BertTokenizer("./model/vocab.txt");
             _modelPath = modelPath;
             _truncate = truncate;
+            _runOptions = new RunOptions();
+            _inferenceSession = new InferenceSession(_modelPath);
         }
 
         /// <summary>
@@ -52,9 +58,6 @@ namespace AllMiniLmL6V2Sharp
                 AttentionMask = encodedTokens.Select(t => t.AttentionMask).ToArray()
             };
 
-            using RunOptions runOptions = new RunOptions();
-            using InferenceSession session = new InferenceSession(_modelPath);
-
             // Create input tensors over the input data.
             using OrtValue inputIdsOrtValue = OrtValue.CreateTensorValueFromMemory(bertInput.InputIds,
                   new long[] { 1, bertInput.InputIds.Length });
@@ -73,7 +76,7 @@ namespace AllMiniLmL6V2Sharp
                 { "token_type_ids", typeIdsOrtValue }
             };
 
-            using IDisposableReadOnlyCollection<OrtValue> output = session.Run(runOptions, inputs, session.OutputNames);
+            using IDisposableReadOnlyCollection<OrtValue> output = _inferenceSession.Run(_runOptions, inputs, _inferenceSession.OutputNames);
 
             // Perform Pooling
             var pooled = SingleMeanPooling(output.First(), attMaskOrtValue);
@@ -124,9 +127,6 @@ namespace AllMiniLmL6V2Sharp
                 AttentionMask = e.Select(t => t.AttentionMask).ToArray()
             });
 
-            using RunOptions runOptions = new RunOptions();
-            using InferenceSession session = new InferenceSession(_modelPath);
-
             // Create input tensors over the input data.
             var size = inputs.Count();
             var inputIds = inputs.SelectMany(i => i.InputIds).ToArray();
@@ -149,7 +149,7 @@ namespace AllMiniLmL6V2Sharp
                 { "token_type_ids", typeIdsOrtValue }
             };
 
-            using IDisposableReadOnlyCollection<OrtValue> output = session.Run(runOptions, ortInputs, session.OutputNames);
+            using IDisposableReadOnlyCollection<OrtValue> output = _inferenceSession.Run(_runOptions, ortInputs, _inferenceSession.OutputNames);
 
             // For now, perform this seperatly for each output value.
             return MultiplePostProcess(output.First(), attMaskOrtValue);
@@ -160,15 +160,28 @@ namespace AllMiniLmL6V2Sharp
             List<float[]> results = new List<float[]>();
             float[] output = modelOutput.GetTensorDataAsSpan<float>().ToArray();
             int[] dimensions = modelOutput.GetTensorTypeAndShape().Shape.Select(s => (int)s).ToArray();
-            dimensions[0] = 1;
+            dimensions[0] = 1; // Since only processing 1 row at a time, set to 1. 
             long shape = dimensions[0] * dimensions[1] * dimensions[2];
 
-            for (long i = 0; i < output.Length; i += shape)
+            long[] mask = attentionMask.GetTensorDataAsSpan<long>().ToArray();
+            int[] maskDimensions = attentionMask.GetTensorTypeAndShape().Shape.Select(s => (int)s).ToArray();
+            maskDimensions[0] = 1; // Since only processing 1 row at a time, set to 1. 
+            long maskShape = maskDimensions[0] * maskDimensions[1];
+            int indicies = (int)Math.Floor((double)output.Length / (double)shape);
+
+            for (long i = 0; i < indicies; i++)
             {
+                long sourceIndex = shape * i;
                 float[] buffer = new float[shape];
-                Array.Copy(output, i, buffer, 0, shape);
+                Array.Copy(output, sourceIndex, buffer, 0, shape);
                 DenseTensor<float> tokenTensor = new DenseTensor<float>(buffer, dimensions);
-                DenseTensor<float> maskTensor = AttentionMaskToTensor(attentionMask);
+
+                long[] maskBuffer = new long[maskShape];
+                long maskIndex = maskShape * i;
+                Array.Copy(mask, maskIndex, maskBuffer, 0, maskShape);
+
+                DenseTensor<float> maskTensor = new DenseTensor<float>(maskBuffer.Select(x => (float)x).ToArray(), maskDimensions);
+
                 var pooled = MeanPooling(tokenTensor, maskTensor);
                 // Normalize Embeddings
                 var normalized = pooled.Normalize(p: 2, dim: 1);
@@ -224,6 +237,27 @@ namespace AllMiniLmL6V2Sharp
             DenseTensor<T> tokenTensor = new DenseTensor<T>(tokenShape);
             tokenEmbeddings.CopyTo(tokenTensor.Buffer.Span);
             return tokenTensor;
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!disposedValue)
+            {
+                if (disposing)
+                {
+                    _inferenceSession.Dispose();
+                    _runOptions.Dispose();
+                }
+
+                disposedValue = true;
+            }
+        }
+
+        public void Dispose()
+        {
+            // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
+            Dispose(disposing: true);
+            GC.SuppressFinalize(this);
         }
     }
 }
